@@ -1,0 +1,42 @@
+{
+	"name": "alarox-restserver/RestServerDriver_MongoDB",
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/Al4r1c/AlaroxClassLoader"
+		},
+		{
+			"type": "vcs",
+			"url": "https://github.com/Al4r1c/AlaroxFileManager"
+		},
+		{
+			"type": "vcs",
+			"url": "https://github.com/Al4r1c/AlaroxXMLParser"
+		},
+		{
+			"type": "vcs",
+			"url": "https://github.com/Al4r1c/RestServer"
+		}
+	],
+	"description": "description_text",
+	"type": "library",
+	"homepage": "https://github.com/Al4r1c/RestServerDriver_MongoDB/",
+	"authors": [
+		{
+			"name": "KURDIJAKA Y.",
+			"email": "yann.kurdijaka@wanadoo.fr"
+		}
+	],
+	"require": {
+		"php": ">=5.4.0",
+		"mandango/mandango": "dev-master",
+		"alarox-restserver/RestServer": "dev-dev"
+	},
+
+	"autoload": {
+		"psr-0": {
+			"AlaroxRestServeurDrivers": "src/"
+		}
+	},
+	"minimum-stability": "dev"
+}
