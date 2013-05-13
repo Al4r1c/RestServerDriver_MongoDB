@@ -92,7 +92,7 @@ class DatabaseMongo extends AbstractDatabase
         $article = $this->getRepository()->findOneById($id);
 
         if (!empty($article)) {
-            return new ObjetReponse(200, $this->recupererResultats($article));
+            return new ObjetReponse(200, array($this->getNomTable() => $this->recupererResultats($article)));
         } else {
             return new ObjetReponse(404);
         }
@@ -123,10 +123,10 @@ class DatabaseMongo extends AbstractDatabase
 
 
         if ($resultat->count() > 0) {
-            $tabResult = array();
+            $tabResult[$this->getNomTable()] = array();
 
-            foreach ($resultat as $clef => $unResultatTrouve) {
-                $tabResult[$clef] = $this->recupererResultats($unResultatTrouve);
+            foreach ($resultat as $unResultatTrouve) {
+                $tabResult[$this->getNomTable()][] = $this->recupererResultats($unResultatTrouve);
             }
 
             return new ObjetReponse(200, $tabResult);
