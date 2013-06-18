@@ -141,11 +141,11 @@ class DatabaseMongo extends AbstractDatabase
      */
     public function inserer($champs)
     {
-        $this->getConnection()->create($this->getRepository()->getDocumentClass())->fromArray(
-            $this->recupererChampsEligibles($champs)
-        )->save();
+        $obj = $this->getConnection()->create($this->getRepository()->getDocumentClass())->fromArray(
+                   $this->recupererChampsEligibles($champs)
+               )->save();
 
-        return new ObjetReponse(201);
+        return new ObjetReponse(201, array($this->getNomTable() => $this->recupererResultats($obj)));
     }
 
     /**
