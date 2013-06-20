@@ -37,12 +37,12 @@ class DatabaseMongo extends AbstractDatabase
             $connection =
                 new Connection(
                     'mongodb://' . $databaseInformations->getUsername() . ':' . $databaseInformations->getPassword() .
-                        '@' . $databaseInformations->getHost() . ':' .
-                        $databaseInformations->getPort(), $databaseInformations->getDatabase());
+                    '@' . $databaseInformations->getHost() . ':' .
+                    $databaseInformations->getPort(), $databaseInformations->getDatabase());
         } else {
             $connection =
                 new Connection('mongodb://' . $databaseInformations->getHost() . ':' .
-                    $databaseInformations->getPort(), $databaseInformations->getDatabase());
+                $databaseInformations->getPort(), $databaseInformations->getDatabase());
         }
 
         $this->getConnection()->setConnection('myConnection', $connection);
@@ -75,7 +75,8 @@ class DatabaseMongo extends AbstractDatabase
                 }
 
                 return $valeur;
-            }, $tableauValeurs
+            },
+            $tableauValeurs
         );
     }
 
@@ -172,7 +173,11 @@ class DatabaseMongo extends AbstractDatabase
         $toUpdateObject = $this->getRepository()->findOneById($id);
 
         if (!is_null($toUpdateObject)) {
-            $toUpdateObject->fromArray($this->recupererChampsEligibles($champs))->save();
+            foreach ($this->recupererChampsEligibles($champs) as $nomChamp => $valeurChamp) {
+                $toUpdateObject->set($nomChamp, $valeurChamp);
+            }
+
+            $toUpdateObject->save();
 
             return new ObjetReponse(200);
         } else {
@@ -279,10 +284,10 @@ class DatabaseMongo extends AbstractDatabase
 
                 if (!in_array($idNouvelObjet, $tabKey)) {
                     $objetConcerne
-                        ->{'add' . ucfirst($champConcerne['dbName'])}(
+                    ->{'add' . ucfirst($champConcerne['dbName'])}(
                             $nouvelObjet
                         )
-                        ->save();
+                    ->save();
                 }
 
                 return new ObjetReponse(200);
@@ -312,10 +317,10 @@ class DatabaseMongo extends AbstractDatabase
 
             if (!is_null($toDelObject = $foreignRepository->findOneById($idToDelObject))) {
                 $objetConcerne
-                    ->{'remove' . ucfirst($champConcerne['dbName'])}(
+                ->{'remove' . ucfirst($champConcerne['dbName'])}(
                         $toDelObject
                     )
-                    ->save();
+                ->save();
 
                 return new ObjetReponse(200);
             } else {
@@ -550,7 +555,7 @@ class DatabaseMongo extends AbstractDatabase
                             $this->getRepository($metadata['referencesOne'][$champConcerne['dbName']]['class']);
 
                         if (!is_null($object = $foreignRepository->findOneById($uneDonneeRequete->getValeurs()))) {
-                            $nouvelleValeur = $object->getId();
+                            $tabChamps[$nomChamp] = $object->getId();
                         }
                     } else {
                         $foreignRepository =
@@ -569,14 +574,11 @@ class DatabaseMongo extends AbstractDatabase
                                 $nouvelleValeur[] = $object->getId();
                             }
                         }
+
+                        $tabChamps[$nomChamp] = $nouvelleValeur;
                     }
                 } else {
-                    $nouvelleValeur = $uneDonneeRequete->getValeurs();
-                }
-
-                if (isset($nouvelleValeur) && !empty($nouvelleValeur)) {
-                    $tabChamps[$nomChamp] = $nouvelleValeur;
-                    unset($nouvelleValeur);
+                    $tabChamps[$nomChamp] = $uneDonneeRequete->getValeurs();
                 }
             }
         }
