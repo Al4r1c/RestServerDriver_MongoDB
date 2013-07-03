@@ -119,19 +119,23 @@ class DatabaseMongo extends AbstractDatabase
             }
         }
 
-        $resultat =
-            $this->getRepository()->createQuery()->criteria($tabFiltres)->sort($sort)->limit($limit)->skip($skip);
+        try {
+            $resultat =
+                $this->getRepository()->createQuery()->criteria($tabFiltres)->sort($sort)->limit($limit)->skip($skip);
 
 
-        if ($resultat->count() > 0) {
-            $tabResult[$this->getNomTable()] = array();
+            if ($resultat->count() > 0) {
+                $tabResult[$this->getNomTable()] = array();
 
-            foreach ($resultat as $unResultatTrouve) {
-                $tabResult[$this->getNomTable()][] = $this->recupererResultats($unResultatTrouve);
+                foreach ($resultat as $unResultatTrouve) {
+                    $tabResult[$this->getNomTable()][] = $this->recupererResultats($unResultatTrouve);
+                }
+
+                return new ObjetReponse(200, $tabResult);
+            } else {
+                return new ObjetReponse(200);
             }
-
-            return new ObjetReponse(200, $tabResult);
-        } else {
+        } catch (\InvalidArgumentException $e) {
             return new ObjetReponse(404);
         }
     }
