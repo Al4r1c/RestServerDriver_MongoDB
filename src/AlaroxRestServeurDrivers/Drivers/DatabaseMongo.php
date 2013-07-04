@@ -558,8 +558,13 @@ class DatabaseMongo extends AbstractDatabase
                         $foreignRepository =
                             $this->getRepository($metadata['referencesOne'][$champConcerne['dbName']]['class']);
 
-                        if (!is_null($object = $foreignRepository->findOneById($uneDonneeRequete->getValeurs()))) {
+                        if (!is_null(
+                            $object = $foreignRepository->findOneById($valeur = $uneDonneeRequete->getValeurs())
+                        )
+                        ) {
                             $tabChamps[$nomChamp] = $object->getId();
+                        } elseif ($valeur == '0' || $valeur == 'false' || $valeur == 'null') {
+                            $tabChamps[$nomChamp] = false;
                         }
                     } else {
                         $foreignRepository =
@@ -579,7 +584,11 @@ class DatabaseMongo extends AbstractDatabase
                             }
                         }
 
-                        $tabChamps[$nomChamp] = $nouvelleValeur;
+                        if (empty($nouvelleValeur)) {
+                            $tabChamps[$nomChamp] = $nouvelleValeur;
+                        } else {
+                            $tabChamps[$nomChamp] = false;
+                        }
                     }
                 } else {
                     $tabChamps[$nomChamp] = $uneDonneeRequete->getValeurs();
