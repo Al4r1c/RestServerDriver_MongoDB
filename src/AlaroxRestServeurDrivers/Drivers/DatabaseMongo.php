@@ -105,24 +105,18 @@ class DatabaseMongo extends AbstractDatabase
      */
     public function recuperer($filtres)
     {
-        $tabFiltres = array();
         list($sort, $limit, $skip) = $this->gererTris($filtres);
 
-        foreach ($filtres->getChampsRequete() as $uneDonneeRequete) {
-            if (!is_null($donneAvecConditions = $this->appliquerOperateurs($uneDonneeRequete))) {
-                if (!isset($tabFiltres[$uneDonneeRequete->getChamp()])) {
-                    $tabFiltres[$uneDonneeRequete->getChamp()] = $donneAvecConditions;
-                } else {
-                    $tabFiltres[$uneDonneeRequete->getChamp()] =
-                        $donneAvecConditions + $tabFiltres[$uneDonneeRequete->getChamp()];
-                }
-            }
-        }
-
         try {
-            $resultat =
-                $this->getRepository()->createQuery()->criteria($tabFiltres)->sort($sort)->limit($limit)->skip($skip);
+            if (($tabFiltres = $this->recupererChampsEligiblesGet($filtres)) === false) {
+                return new ObjetReponse(400);
+            }
 
+            $resultat =
+                $this->getRepository()->createQuery()->criteria($tabFiltres)
+                ->sort($sort)
+                ->limit($limit)
+                ->skip($skip);
 
             if ($resultat->count() > 0) {
                 $tabResult[$this->getNomTable()] = array();
@@ -139,6 +133,7 @@ class DatabaseMongo extends AbstractDatabase
             return new ObjetReponse(404);
         }
     }
+
 
     /**
      * @param ParametresManager $champs
@@ -375,20 +370,26 @@ class DatabaseMongo extends AbstractDatabase
         if (strcmp(($clef = $uneDonneeRequete->getChamp()), '_id') == 0) {
             return new \MongoId($uneDonneeRequete->getValeurs());
         } else {
-            if (array_key_exists($uneDonneeRequete->getChamp(), $this->getRepository()->getMetadata()['fields'])) {
-                $type = $this->getRepository()->getMetadata()['fields'][$uneDonneeRequete->getChamp()]['type'];
+            $metadataFields = $this->getRepository()->getMetadata()['fields'];
 
-                if (is_array($valeur = $uneDonneeRequete->getValeurs())) {
-                    foreach ($valeur as $clef => $uneValeur) {
-                        $valeur[$clef] = Container::get($type)->toPHP($uneValeur);
-                    }
-
-                    return $this->conditionAvecOr($uneDonneeRequete->getOperateur()->getType(), $valeur);
+            if (array_key_exists($clef, $metadataFields)) {
+                if (isset($metadataFields[$clef]['referenceField'])) {
+                    return new \MongoId($uneDonneeRequete->getValeurs());
                 } else {
-                    return $this->conditionSansOr(
-                        $uneDonneeRequete->getOperateur()->getType(),
-                        Container::get($type)->toPHP($uneDonneeRequete->getValeurs())
-                    );
+                    $type = $this->getRepository()->getMetadata()['fields'][$uneDonneeRequete->getChamp()]['type'];
+
+                    if (is_array($valeur = $uneDonneeRequete->getValeurs())) {
+                        foreach ($valeur as $clef => $uneValeur) {
+                            $valeur[$clef] = Container::get($type)->toPHP($uneValeur);
+                        }
+
+                        return $this->conditionAvecOr($uneDonneeRequete->getOperateur()->getType(), $valeur);
+                    } else {
+                        return $this->conditionSansOr(
+                            $uneDonneeRequete->getOperateur()->getType(),
+                            Container::get($type)->toPHP($uneDonneeRequete->getValeurs())
+                        );
+                    }
                 }
             } else {
                 return null;
@@ -537,6 +538,37 @@ class DatabaseMongo extends AbstractDatabase
         }
 
         return $this->mongoIdToString($tabResult);
+    }
+
+    /**
+     * @param ParametresManager $champs
+     * @return array
+     */
+    private function recupererChampsEligiblesGet($champs)
+    {
+        $tabChamps = array();
+
+        $metadata = $this->getRepository()->getMetadata();
+
+        foreach ($champs->getChampsRequete() as $uneDonneeRequete) {
+            if (!is_null($donneAvecConditions = $this->appliquerOperateurs($uneDonneeRequete))) {
+
+                if (isset($metadata['fields'][$nomChamp = $uneDonneeRequete->getChamp()]['referenceField'])) {
+                    $nomChamp = $metadata['fields'][$uneDonneeRequete->getChamp()]['dbName'];
+                }
+
+                if (!isset($tabChamps[$nomChamp])) {
+                    $tabChamps[$nomChamp] = $donneAvecConditions;
+                } else {
+                    $tabChamps[$nomChamp] =
+                        $donneAvecConditions + $tabChamps[$nomChamp];
+                }
+            } else {
+                return false;
+            }
+        }
+
+        return $tabChamps;
     }
 
     /**
