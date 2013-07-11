@@ -616,7 +616,7 @@ class DatabaseMongo extends AbstractDatabase
                             }
                         }
 
-                        if (empty($nouvelleValeur)) {
+                        if (!empty($nouvelleValeur)) {
                             $tabChamps[$nomChamp] = $nouvelleValeur;
                         } else {
                             $tabChamps[$nomChamp] = false;
