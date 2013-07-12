@@ -122,7 +122,8 @@ class DatabaseMongo extends AbstractDatabase
                 $tabResult[$this->getNomTable()] = array();
 
                 foreach ($resultat as $unResultatTrouve) {
-                    $tabResult[$this->getNomTable()][] = $this->recupererResultats($unResultatTrouve);
+                    $tabResult[$this->getNomTable()][$unResultatTrouve->getId()->__toString()] =
+                        $this->recupererResultats($unResultatTrouve);
                 }
 
                 return new ObjetReponse(200, $tabResult);
