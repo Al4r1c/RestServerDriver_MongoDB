@@ -82,9 +82,10 @@ class DatabaseMongo extends AbstractDatabase
 
     /**
      * @param string $id
+     * @param boolean $lazyLoad
      * @return ObjetReponse
      */
-    public function recupererId($id)
+    public function recupererId($id, $lazyLoad)
     {
         if (is_null($id)) {
             return new ObjetReponse(400);
@@ -93,7 +94,7 @@ class DatabaseMongo extends AbstractDatabase
         $article = $this->getRepository()->findOneById($id);
 
         if (!empty($article)) {
-            return new ObjetReponse(200, array($this->getNomTable() => $this->recupererResultats($article)));
+            return new ObjetReponse(200, array($this->getNomTable() => $this->recupererResultats($article, $lazyLoad)));
         } else {
             return new ObjetReponse(404);
         }
@@ -123,7 +124,7 @@ class DatabaseMongo extends AbstractDatabase
 
                 foreach ($resultat as $unResultatTrouve) {
                     $tabResult[$this->getNomTable()][$unResultatTrouve->getId()->__toString()] =
-                        $this->recupererResultats($unResultatTrouve);
+                        $this->recupererResultats($unResultatTrouve, $filtres->isLazyLoad());
                 }
 
                 return new ObjetReponse(200, $tabResult);
@@ -516,10 +517,11 @@ class DatabaseMongo extends AbstractDatabase
     }
 
     /**
-     * @param Document $article
+     * @param Document $object
+     * @param boolean $lazyLoad
      * @return array
      */
-    private function recupererResultats($article)
+    private function recupererResultats($object, $lazyLoad = false)
     {
         $tabClefsEmbarquees = array();
 
@@ -528,17 +530,33 @@ class DatabaseMongo extends AbstractDatabase
             $tabClefsEmbarquees = array_keys($tabEmbedded);
         }
 
-        $tabResult = $article->toArray(true);
-        foreach ($tabClefsEmbarquees as $unChampEmbarque) {
-            $tabResult[$unChampEmbarque] = array();
+        $tabResultObject = $object->toArray(true);
 
-            foreach ($article->{'get' . ucfirst($unChampEmbarque)}() as $clefEmbarquee =>
-                $itemEmbarquee) {
-                $tabResult[$unChampEmbarque][$clefEmbarquee] = $itemEmbarquee->toArray();
+
+        if ($lazyLoad === true) {
+            foreach ($tabClefsEmbarquees as $unChampEmbarque) {
+                $tabResultObject[$unChampEmbarque] = array();
+
+                foreach ($object->{'get' . ucfirst($unChampEmbarque)}() as $clefEmbarquee =>
+                    $itemEmbarquee) {
+                    $tabResultObject[$unChampEmbarque][$clefEmbarquee] = $itemEmbarquee->toArray();
+                }
+            }
+
+            if ($metadata['_has_references'] === true &&
+                count($tabReferences = array_merge($metadata['referencesOne'], $metadata['referencesMany'])) > 0
+            ) {
+                foreach ($tabReferences as $unChampReference) {
+                    if (($idRef = $object->{'get' . ucfirst($unChampReference['field'])}()) != null) {
+                        $foreignRepo = $this->getRepository($unChampReference['class']);
+                        $tabResultObject[$unChampReference['field']] = $foreignRepo->findOneById($idRef)->toArray(true);
+                    }
+                }
             }
         }
 
-        return $this->mongoIdToString($tabResult);
+
+        return $this->mongoIdToString($tabResultObject);
     }
 
     /**
