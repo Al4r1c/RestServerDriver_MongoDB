@@ -523,18 +523,13 @@ class DatabaseMongo extends AbstractDatabase
      */
     private function recupererResultats($object, $lazyLoad = false)
     {
-        $tabClefsEmbarquees = array();
-
-        $metadata = $this->getRepository()->getMetadata();
-        if (count($tabEmbedded = array_merge($metadata['embeddedsOne'], $metadata['embeddedsMany'])) > 0) {
-            $tabClefsEmbarquees = array_keys($tabEmbedded);
-        }
-
         $tabResultObject = $object->toArray(true);
 
+        $metadata = $this->getRepository()->getMetadata();
 
-        if ($lazyLoad === true) {
-            foreach ($tabClefsEmbarquees as $unChampEmbarque) {
+
+        if (count($tabEmbedded = array_merge($metadata['embeddedsOne'], $metadata['embeddedsMany'])) > 0) {
+            foreach (array_keys($tabEmbedded) as $unChampEmbarque) {
                 $tabResultObject[$unChampEmbarque] = array();
 
                 foreach ($object->{'get' . ucfirst($unChampEmbarque)}() as $clefEmbarquee =>
@@ -542,7 +537,10 @@ class DatabaseMongo extends AbstractDatabase
                     $tabResultObject[$unChampEmbarque][$clefEmbarquee] = $itemEmbarquee->toArray();
                 }
             }
+        }
 
+
+        if ($lazyLoad === true) {
             if ($metadata['_has_references'] === true &&
                 count($tabReferences = array_merge($metadata['referencesOne'], $metadata['referencesMany'])) > 0
             ) {
