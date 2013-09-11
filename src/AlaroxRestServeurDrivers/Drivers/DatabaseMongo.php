@@ -120,12 +120,7 @@ class DatabaseMongo extends AbstractDatabase
                 ->skip($skip);
 
             if ($resultat->count() > 0) {
-                $tabResult[$this->getNomTable()] = array();
-
-                foreach ($resultat as $unResultatTrouve) {
-                    $tabResult[$this->getNomTable()][$unResultatTrouve->getId()->__toString()] =
-                        $this->recupererResultats($unResultatTrouve, $filtres->isLazyLoad());
-                }
+                $tabResult[$this->getNomTable()] = $this->boucleListeResultats($resultat, $filtres->isLazyLoad());
 
                 return new ObjetReponse(200, $tabResult);
             } else {
@@ -517,6 +512,22 @@ class DatabaseMongo extends AbstractDatabase
     }
 
     /**
+     * @param \Mandango\Query $listeObjets
+     * @param bool $lazyLoad
+     * @return array
+     */
+    private function boucleListeResultats($listeObjets, $lazyLoad = false)
+    {
+        $tabResult = array();
+
+        foreach ($listeObjets as $clefEmbarquee => $itemEmbarquee) {
+            $tabResult[$clefEmbarquee] = $this->recupererResultats($itemEmbarquee, $lazyLoad);
+        }
+
+        return $tabResult;
+    }
+
+    /**
      * @param Document $object
      * @param boolean $lazyLoad
      * @return array
@@ -528,27 +539,32 @@ class DatabaseMongo extends AbstractDatabase
         $metadata = $this->getRepository()->getMetadata();
 
 
-        if (count($tabEmbedded = array_merge($metadata['embeddedsOne'], $metadata['embeddedsMany'])) > 0) {
-            foreach (array_keys($tabEmbedded) as $unChampEmbarque) {
-                $tabResultObject[$unChampEmbarque] = array();
+        foreach ($metadata['embeddedsMany'] as $unChampEmbarque) {
+            $tabResultObject[$unChampEmbarque] =
+                $this->boucleListeResultats($object->{'get' . ucfirst($unChampEmbarque)}());
+        }
 
-                foreach ($object->{'get' . ucfirst($unChampEmbarque)}() as $clefEmbarquee =>
-                    $itemEmbarquee) {
-                    $tabResultObject[$unChampEmbarque][$clefEmbarquee] = $itemEmbarquee->toArray();
-                }
-            }
+        foreach ($metadata['embeddedsOne'] as $unChampEmbarque) {
+            $tabResultObject[$unChampEmbarque] =
+                $this->recupererResultats($object->{'get' . ucfirst($unChampEmbarque)}());
         }
 
 
         if ($lazyLoad === true) {
-            if ($metadata['_has_references'] === true &&
-                count($tabReferences = array_merge($metadata['referencesOne'], $metadata['referencesMany'])) > 0
-            ) {
-                foreach ($tabReferences as $unChampReference) {
-                    if (($idRef = $object->{'get' . ucfirst($unChampReference['field'])}()) != null) {
-                        $foreignRepo = $this->getRepository($unChampReference['class']);
-                        $tabResultObject[$unChampReference['field']] = $foreignRepo->findOneById($idRef)->toArray(true);
-                    }
+            foreach ($metadata['referencesMany'] as $key => $unChampReference) {
+                $tabResultObject[$unChampReference['field']] =
+                    $this->boucleListeResultats($object->{'get' . ucfirst($key)}());
+            }
+
+            foreach ($metadata['referencesOne'] as $key => $unChampReference) {
+                $tabResultObject[$unChampReference['field']] =
+                    $this->recupererResultats($object->{'get' . ucfirst($key)}());
+            }
+
+            if (count($tabRelations = array_merge($metadata['relationsManyOne'], $metadata['relationsManyMany'])) > 0) {
+                foreach (array_keys($tabRelations) as $unChampsRelation) {
+                    $tabResultObject[$unChampsRelation] =
+                        $this->boucleListeResultats($object->{'get' . ucfirst($unChampsRelation)}());
                 }
             }
         }
