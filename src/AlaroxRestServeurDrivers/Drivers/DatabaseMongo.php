@@ -82,7 +82,7 @@ class DatabaseMongo extends AbstractDatabase
 
     /**
      * @param string $id
-     * @param boolean $lazyLoad
+     * @param mixed $lazyLoad
      * @return ObjetReponse
      */
     public function recupererId($id, $lazyLoad)
@@ -120,7 +120,7 @@ class DatabaseMongo extends AbstractDatabase
                 ->skip($skip);
 
             if ($resultat->count() > 0) {
-                $tabResult[$this->getNomTable()] = $this->boucleListeResultats($resultat, $filtres->isLazyLoad());
+                $tabResult[$this->getNomTable()] = $this->boucleListeResultats($resultat, $filtres->getLazyLoad());
 
                 return new ObjetReponse(200, $tabResult);
             } else {
@@ -513,7 +513,7 @@ class DatabaseMongo extends AbstractDatabase
 
     /**
      * @param \Mandango\Query $listeObjets
-     * @param bool $lazyLoad
+     * @param mixed $lazyLoad
      * @return array
      */
     private function boucleListeResultats($listeObjets, $lazyLoad = false)
@@ -529,11 +529,15 @@ class DatabaseMongo extends AbstractDatabase
 
     /**
      * @param Document $object
-     * @param boolean $lazyLoad
+     * @param mixed $lazyLoad
      * @return array
      */
     private function recupererResultats($object, $lazyLoad = false)
     {
+        if(is_null($object)) {
+            return null;
+        }
+
         $tabResultObject = $object->toArray(true);
 
         $metadata = $this->getRepository()->getMetadata();
@@ -550,21 +554,35 @@ class DatabaseMongo extends AbstractDatabase
         }
 
 
-        if ($lazyLoad === true) {
+        if ($lazyLoad !== false) {
+            $testLazyLoad = function ($keyVal) use ($lazyLoad) {
+                return
+                    $lazyLoad === true ||
+                    (is_array($lazyLoad) &&
+                        in_array($keyVal, $lazyLoad) ||
+                        (is_string($lazyLoad) && $lazyLoad == $keyVal));
+            };
+
             foreach ($metadata['referencesMany'] as $key => $unChampReference) {
-                $tabResultObject[$unChampReference['field']] =
-                    $this->boucleListeResultats($object->{'get' . ucfirst($key)}());
+                if ($testLazyLoad($key) === true) {
+                    $tabResultObject[$unChampReference['field']] =
+                        $this->boucleListeResultats($object->{'get' . ucfirst($key)}());
+                }
             }
 
             foreach ($metadata['referencesOne'] as $key => $unChampReference) {
-                $tabResultObject[$unChampReference['field']] =
-                    $this->recupererResultats($object->{'get' . ucfirst($key)}());
+                if ($testLazyLoad($key) === true) {
+                    $tabResultObject[$unChampReference['field']] =
+                        $this->recupererResultats($object->{'get' . ucfirst($key)}());
+                }
             }
 
             if (count($tabRelations = array_merge($metadata['relationsManyOne'], $metadata['relationsManyMany'])) > 0) {
                 foreach (array_keys($tabRelations) as $unChampsRelation) {
-                    $tabResultObject[$unChampsRelation] =
-                        $this->boucleListeResultats($object->{'get' . ucfirst($unChampsRelation)}());
+                    if ($testLazyLoad($unChampsRelation) === true) {
+                        $tabResultObject[$unChampsRelation] =
+                            $this->boucleListeResultats($object->{'get' . ucfirst($unChampsRelation)}());
+                    }
                 }
             }
         }
