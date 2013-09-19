@@ -370,7 +370,9 @@ class DatabaseMongo extends AbstractDatabase
             $metadataFields = $this->getRepository()->getMetadata()['fields'];
 
             if (array_key_exists($clef, $metadataFields)) {
-                if (isset($metadataFields[$clef]['referenceField'])) {
+                if (is_null($uneDonneeRequete->getValeurs())) {
+                    return false;
+                } elseif (isset($metadataFields[$clef]['referenceField'])) {
                     return new \MongoId($uneDonneeRequete->getValeurs());
                 } else {
                     $type = $this->getRepository()->getMetadata()['fields'][$uneDonneeRequete->getChamp()]['type'];
@@ -534,7 +536,7 @@ class DatabaseMongo extends AbstractDatabase
      */
     private function recupererResultats($object, $lazyLoad = false)
     {
-        if(is_null($object)) {
+        if (is_null($object)) {
             return null;
         }
 
@@ -603,7 +605,6 @@ class DatabaseMongo extends AbstractDatabase
 
         foreach ($champs->getChampsRequete() as $uneDonneeRequete) {
             if (!is_null($donneAvecConditions = $this->appliquerOperateurs($uneDonneeRequete))) {
-
                 if (isset($metadata['fields'][$nomChamp = $uneDonneeRequete->getChamp()]['referenceField'])) {
                     $nomChamp = $metadata['fields'][$uneDonneeRequete->getChamp()]['dbName'];
                 }
