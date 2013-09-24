@@ -484,7 +484,7 @@ class DatabaseMongo extends AbstractDatabase
     private function gererTris($paramManager)
     {
         $sort = array();
-        $limit = PHP_INT_MAX;
+        $limit = 2147483647;
         $skip = 0;
 
         if (!is_null($orderBy = $paramManager->getUnTri('orderBy'))) {
