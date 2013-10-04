@@ -379,14 +379,14 @@ class DatabaseMongo extends AbstractDatabase
 
                     if (is_array($valeur = $uneDonneeRequete->getValeurs())) {
                         foreach ($valeur as $clef => $uneValeur) {
-                            $valeur[$clef] = Container::get($type)->toPHP($uneValeur);
+                            $valeur[$clef] = Container::get($type)->toMongo($uneValeur);
                         }
 
                         return $this->conditionAvecOr($uneDonneeRequete->getOperateur()->getType(), $valeur);
                     } else {
                         return $this->conditionSansOr(
                             $uneDonneeRequete->getOperateur()->getType(),
-                            Container::get($type)->toPHP($uneDonneeRequete->getValeurs())
+                            Container::get($type)->toMongo($uneDonneeRequete->getValeurs())
                         );
                     }
                 }
