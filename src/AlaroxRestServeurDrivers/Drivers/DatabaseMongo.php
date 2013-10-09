@@ -124,6 +124,8 @@ class DatabaseMongo extends AbstractDatabase
             } else {
                 $tabResult[$this->getNomTable()] = array();
             }
+
+            return new ObjetReponse(200, $tabResult);
         } catch (\InvalidArgumentException $e) {
             return new ObjetReponse(404);
         }
