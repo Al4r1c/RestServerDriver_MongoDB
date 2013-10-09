@@ -121,10 +121,8 @@ class DatabaseMongo extends AbstractDatabase
 
             if ($resultat->count() > 0) {
                 $tabResult[$this->getNomTable()] = $this->boucleListeResultats($resultat, $filtres->getLazyLoad());
-
-                return new ObjetReponse(200, $tabResult);
             } else {
-                return new ObjetReponse(200);
+                $tabResult[$this->getNomTable()] = array();
             }
         } catch (\InvalidArgumentException $e) {
             return new ObjetReponse(404);
