@@ -16,7 +16,15 @@
 		{
 			"type": "vcs",
 			"url": "https://github.com/Al4r1c/RestServer"
-		}
+		},
+        {
+            "type": "vcs",
+            "url": "https://github.com/NextWebVentures/mandango"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/NextWebVentures/mondator"
+        }
 	],
 	"description": "description_text",
 	"type": "library",
@@ -29,7 +37,7 @@
 	],
 	"require": {
 		"php": ">=5.4.0",
-		"mandango/mandango": "dev-master",
+		"NextWebVentures/mandango": "dev-master",
 		"alarox-restserver/RestServer": "dev-dev"
 	},
 
