@@ -5,7 +5,6 @@ use AlaroxRestServeur\Serveur\Lib\ObjetReponse;
 use AlaroxRestServeur\Serveur\Traitement\Data\AbstractDatabase;
 use AlaroxRestServeur\Serveur\Traitement\Data\DatabaseConfig;
 use AlaroxRestServeur\Serveur\Traitement\DonneeRequete\ChampRequete;
-use AlaroxRestServeur\Serveur\Traitement\DonneeRequete\Operateur;
 use AlaroxRestServeur\Serveur\Traitement\DonneeRequete\ParametresManager;
 use Mandango\Cache\FilesystemCache;
 use Mandango\Connection;
@@ -42,7 +41,7 @@ class DatabaseMongo extends AbstractDatabase
         } else {
             $connection =
                 new Connection('mongodb://' . $databaseInformations->getHost() . ':' .
-                $databaseInformations->getPort(), $databaseInformations->getDatabase());
+                    $databaseInformations->getPort(), $databaseInformations->getDatabase());
         }
 
         $this->getConnection()->setConnection('myConnection', $connection);
@@ -115,9 +114,9 @@ class DatabaseMongo extends AbstractDatabase
 
             $resultat =
                 $this->getRepository()->createQuery()->criteria($tabFiltres)
-                ->sort($sort)
-                ->limit($limit)
-                ->skip($skip);
+                     ->sort($sort)
+                     ->limit($limit)
+                     ->skip($skip);
 
             if ($resultat->count() > 0) {
                 $tabResult[$this->getNomTable()] = $this->boucleListeResultats($resultat, $filtres->getLazyLoad());
@@ -139,8 +138,8 @@ class DatabaseMongo extends AbstractDatabase
     public function inserer($champs)
     {
         $obj = $this->getConnection()->create($this->getRepository()->getDocumentClass())->fromArray(
-                   $this->recupererChampsEligibles($champs)
-               )->save();
+                    $this->recupererChampsEligibles($champs)
+        )           ->save();
 
         return new ObjetReponse(201, array($this->getNomTable() => $this->recupererResultats($obj)));
     }
@@ -230,7 +229,7 @@ class DatabaseMongo extends AbstractDatabase
             if (!is_null($champsConcerne = $nouveauxChamps->getUnChampsRequete($nomCollection))) {
                 $foreignRepository =
                     $this->getRepository(
-                        $this->getRepository()->getMetadata()['referencesMany'][$champConcerne['dbName']]['class']
+                         $this->getRepository()->getMetadata()['referencesMany'][$champConcerne['dbName']]['class']
                     );
 
                 if (is_array($valeur = $champsConcerne->getValeurs())) {
@@ -268,7 +267,7 @@ class DatabaseMongo extends AbstractDatabase
 
             $foreignRepository =
                 $this->getRepository(
-                    $this->getRepository()->getMetadata()['referencesMany'][$champConcerne['dbName']]['class']
+                     $this->getRepository()->getMetadata()['referencesMany'][$champConcerne['dbName']]['class']
                 );
 
             if (!is_null($nouvelObjet = $foreignRepository->findOneById($idNouvelObjet))) {
@@ -280,10 +279,10 @@ class DatabaseMongo extends AbstractDatabase
 
                 if (!in_array($idNouvelObjet, $tabKey)) {
                     $objetConcerne
-                    ->{'add' . ucfirst($champConcerne['dbName'])}(
-                            $nouvelObjet
+                        ->{'add' . ucfirst($champConcerne['dbName'])}(
+                        $nouvelObjet
                         )
-                    ->save();
+                        ->save();
                 }
 
                 return new ObjetReponse(200);
@@ -308,15 +307,15 @@ class DatabaseMongo extends AbstractDatabase
 
             $foreignRepository =
                 $this->getRepository(
-                    $this->getRepository()->getMetadata()['referencesMany'][$champConcerne['dbName']]['class']
+                     $this->getRepository()->getMetadata()['referencesMany'][$champConcerne['dbName']]['class']
                 );
 
             if (!is_null($toDelObject = $foreignRepository->findOneById($idToDelObject))) {
                 $objetConcerne
-                ->{'remove' . ucfirst($champConcerne['dbName'])}(
-                        $toDelObject
+                    ->{'remove' . ucfirst($champConcerne['dbName'])}(
+                    $toDelObject
                     )
-                ->save();
+                    ->save();
 
                 return new ObjetReponse(200);
             } else {
@@ -385,8 +384,8 @@ class DatabaseMongo extends AbstractDatabase
                         return $this->conditionAvecOr($uneDonneeRequete->getOperateur()->getType(), $valeur);
                     } else {
                         return $this->conditionSansOr(
-                            $uneDonneeRequete->getOperateur()->getType(),
-                            Container::get($type)->toMongo($uneDonneeRequete->getValeurs())
+                                    $uneDonneeRequete->getOperateur()->getType(),
+                                        Container::get($type)->toMongo($uneDonneeRequete->getValeurs())
                         );
                     }
                 }
@@ -647,7 +646,7 @@ class DatabaseMongo extends AbstractDatabase
                         )
                         ) {
                             $tabChamps[$nomChamp] = $object->getId();
-                        } elseif ($valeur == '0' || $valeur == 'false' || $valeur == 'null') {
+                        } elseif (empty($valeur)) {
                             $tabChamps[$nomChamp] = false;
                         }
                     } else {
