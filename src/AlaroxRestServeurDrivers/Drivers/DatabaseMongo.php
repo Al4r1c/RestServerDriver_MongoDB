@@ -646,7 +646,7 @@ class DatabaseMongo extends AbstractDatabase
                         )
                         ) {
                             $tabChamps[$nomChamp] = $object->getId();
-                        } elseif (empty($valeur)) {
+                        } else if (empty($valeur)) {
                             $tabChamps[$nomChamp] = false;
                         }
                     } else {
@@ -662,7 +662,10 @@ class DatabaseMongo extends AbstractDatabase
                                 }
                             }
                         } else {
-                            if (!is_null($object = $foreignRepository->findOneById($uneDonneeRequete->getValeurs()))) {
+                            if (!is_null(
+                                $object = $foreignRepository->findOneById($uneDonneeRequete->getValeurs())
+                            )
+                            ) {
                                 $nouvelleValeur[] = $object->getId();
                             }
                         }
@@ -687,14 +690,16 @@ class DatabaseMongo extends AbstractDatabase
      * @param string $nomCollection
      * @return array|ObjetReponse
      */
-    private function checkValidObject($id, $nomCollection)
+    private
+    function checkValidObject($id, $nomCollection)
     {
         $metadata = $this->getRepository()->getMetadata();
 
         if (array_key_exists($nomCollection, $metadata['fields'])) {
             $champConcerne = $metadata['fields'][$nomCollection];
 
-            if (isset($champConcerne['referenceField']) && isset($metadata['referencesMany'][$champConcerne['dbName']])
+            if (isset($champConcerne['referenceField']) &&
+                isset($metadata['referencesMany'][$champConcerne['dbName']])
             ) {
                 if (!is_null($objetConcerne = $this->getRepository()->findOneById($id))) {
                     return array($champConcerne, $objetConcerne);
